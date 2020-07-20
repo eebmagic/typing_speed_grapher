@@ -2,12 +2,12 @@
 from matplotlib import pyplot as plt
 from pathlib import Path
 import numpy
+import os
 
 
 times = []
 raw_speeds = []
 moving_averages = []
-
 
 # Load file
 pathfile = str(Path.home()).strip() + "/.wpm.csv"
@@ -17,8 +17,21 @@ assert Path.exists(Path(pathfile)), "~/.wpm.csv file not found"
 with open(pathfile) as file:
 	content = file.read().strip()
 
+# Update local copy of file
+localfile = os.path.dirname(os.path.abspath(__file__)) + "/wpm.csv"
+with open(localfile) as file:
+	current_content = file.read().strip()
+old_lines = {x for x in current_content.split("\n")}
+
+
 # Loop over file contents
 for ind, row in enumerate(content.split("\n")):
+	# Check if line in current file
+	if row not in old_lines:
+		command = f"echo '{row}' >> {localfile}"
+		os.system(command)
+		print(f"copied row to local wpm.csv file: {row}")
+
 	# Parse for speed and time
 	row = row.split(",")
 	full_date = row[-3]
