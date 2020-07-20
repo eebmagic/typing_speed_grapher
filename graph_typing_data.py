@@ -52,7 +52,7 @@ print(f"Avg Speed: {round(sum(rounded_speeds) / len(rounded_speeds), 2)} wpm")
 
 # Plot and make graph
 plt.plot(times, rounded_speeds)
-plt.plot(times, moving_averages)
+plt.plot(times, moving_averages, color="red")
 plt.yticks(numpy.arange(min(rounded_speeds) - 2, max(rounded_speeds), 5))
 plt.xticks(rotation=45, ha='right')
 plt.grid()
