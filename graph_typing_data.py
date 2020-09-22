@@ -58,9 +58,10 @@ rounded_speeds = [round(x) for x in raw_speeds]
 for a in zip(times, rounded_speeds):
 	print(a)
 
-print(f"\nMin Speed: {min(rounded_speeds)} wpm")
-print(f"Max Speed: {max(rounded_speeds)} wpm")
-print(f"Avg Speed: {round(sum(rounded_speeds) / len(rounded_speeds), 2)} wpm")
+print(f"\nWorst Speed: {min(rounded_speeds)} wpm")
+print(f" Best Speed: {max(rounded_speeds)} wpm")
+print(f"  Avg Speed: {round(sum(rounded_speeds) / len(rounded_speeds), 2)} wpm")
+print(f"Last 10 avg: {round(sum(rounded_speeds[-10:]) / len(rounded_speeds[-10:]), 2)} wpm")
 
 
 # Plot and make graph
