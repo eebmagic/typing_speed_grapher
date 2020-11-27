@@ -3,7 +3,10 @@ from matplotlib import pyplot as plt
 from pathlib import Path
 import numpy
 import os
-
+from datetime import datetime
+from dateutil import parser
+import matplotlib.dates as mdates
+import pandas as pd
 
 times = []
 raw_speeds = []
@@ -14,61 +17,30 @@ pathfile = str(Path.home()).strip() + "/.wpm.csv"
 assert Path.exists(Path(pathfile)), "~/.wpm.csv file not found"
 
 # Open file
-with open(pathfile) as file:
-	content = file.read().strip()
+names = ["race", "wpm", "accuracy", "rank", "racers", "text_id", "timestamp", "database", "tag"]
+content = pd.read_csv(pathfile, names=names)
+content["dates"] = [parser.parse(x) for x in content["timestamp"]]
+content["datestrings"] = [x.strftime("%b - %d") for x in content["dates"]]
+back_dist = 10
+content["rolling_average"] = content.iloc[:,1].rolling(window=back_dist).mean()
 
-# Update local copy of file
-localfile = os.path.dirname(os.path.abspath(__file__)) + "/wpm.csv"
-with open(localfile) as file:
-	current_content = file.read().strip()
-old_lines = {x for x in current_content.split("\n")}
+minspeed = content["wpm"].min()
+maxspeed = content["wpm"].max()
+avgspeed = round(content["wpm"].sum() / len(content), 2)
+lastavg = round(content["wpm"][-10:].sum() / 10, 2)
 
+print(f"\nWorst Speed: {minspeed}")
+print(f" Best Speed: {maxspeed} wpm")
+print(f"  Avg Speed: {avgspeed} wpm")
+print(f"Last 10 avg: {lastavg} wpm")
 
-# Loop over file contents
-for ind, row in enumerate(content.split("\n")):
-	# Check if line in current file
-	if row not in old_lines:
-		command = f"echo '{row}' >> {localfile}"
-		os.system(command)
-		print(f"copied row to local wpm.csv file: {row}")
-
-	# Parse for speed and time
-	row = row.split(",")
-	full_date = row[-3]
-	day, time = full_date.split()
-	time = time[:time.index('.')]
-	HOUR, MIN, SEC = time.split(':')
-	short_time = ':'.join([HOUR, MIN])
-	times.append(day + " " + short_time)
-	raw_speeds.append(float(row[1]))
-
-	# Make moving averages data
-	# moving_averages.append(sum(raw_speeds) / len(raw_speeds))
-	back_dist = 10
-	if ind > back_dist:
-		moving_averages.append(sum(raw_speeds[ind-back_dist:]) / back_dist)
-	else:
-		moving_averages.append(raw_speeds[0])
-
-# Round final speeds
-rounded_speeds = [round(x) for x in raw_speeds]
-
-
-# Print out information
-for a in zip(times, rounded_speeds):
-	print(a)
-
-print(f"\nWorst Speed: {min(rounded_speeds)} wpm")
-print(f" Best Speed: {max(rounded_speeds)} wpm")
-print(f"  Avg Speed: {round(sum(rounded_speeds) / len(rounded_speeds), 2)} wpm")
-print(f"Last 10 avg: {round(sum(rounded_speeds[-10:]) / len(rounded_speeds[-10:]), 2)} wpm")
-
-
+xticks = [x.strftime("%y - %b - %d") for x in content["dates"]]
 # Plot and make graph
-plt.plot(times, rounded_speeds)
-plt.plot(times, moving_averages, color="red")
-plt.yticks(numpy.arange(min(rounded_speeds) - 2, max(rounded_speeds), 5))
-plt.xticks(rotation=45, ha='right')
+plt.plot(content["race"], content["wpm"])
+plt.plot(content["race"], content["rolling_average"], color="red")
+plt.yticks(numpy.arange(int(minspeed) - 2, int(maxspeed), 5))
+plt.xticks(content["race"][::5], xticks[::5], rotation=45, ha='right')
+plt.tight_layout()
 plt.grid()
 plt.ylabel("WPM")
 plt.legend(["Test Results", f"Rolling Average ({back_dist} previous samples used)"])
